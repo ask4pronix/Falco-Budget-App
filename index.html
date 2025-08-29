@@ -1,12 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Falco Enterprises Budget App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Falco Enterprises – Torsolo Budget ($35,000)</title>
+  <style>
+    :root { --bg1:#2a0a4b; --bg2:#0b0b0e; --card:#2d2340; --accent:#a78bfa; --accent2:#c084fc; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           background: linear-gradient(135deg, var(--bg1), var(--bg2)); color: #fff; }
+    header { position: sticky; top:0; z-index: 20; background: rgba(43,10,75,.55); backdrop-filter: blur(10px);
+             border-bottom: 1px solid rgba(167,139,250,.25); padding: 12px 16px; display:flex; justify-content: space-between; align-items: center; }
+    h1 { margin:0; font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 800; color: var(--accent2); }
+    .subtitle { color:#eee; font-weight:700; font-size: clamp(.8rem, 2.5vw, 1rem); }
+    .right { text-align:right; }
+    .label { font-size:.7rem; text-transform:uppercase; color: #c9b6ff; font-weight:700; opacity:.9; }
+    .value { font-size: clamp(1rem, 2.8vw, 1.2rem); font-weight:900; color:#fff; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .buttons { position: sticky; top:58px; z-index: 10; display:flex; gap:8px; flex-wrap:wrap; padding:10px 0 6px; background: linear-gradient(180deg, rgba(43,10,75,.65), transparent); }
+    .btn { padding:10px 14px; border-radius:14px; border:1px solid rgba(167,139,250,.35); background: rgba(167,139,250,.15);
+           color:#f5ecff; font-weight:800; cursor:pointer; -webkit-tap-highlight-color: transparent; }
+    .btn.active { background:#a78bfa; color:#160b2b; border-color:#c4b5fd; }
+    .table { margin-top:12px; border:1px solid rgba(199,165,255,.2); border-radius:16px; overflow:auto; background: rgba(167,139,250,.10); }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid rgba(199,165,255,.15); white-space:nowrap; }
+    th { text-align:left; color:#e9d5ff; font-weight:900; }
+    td { font-weight:800; }
+    td.sub { color:#d9ccff; font-weight:700; }
+    tr:hover { background: rgba(167,139,250,.15); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:14px; margin-top:14px; }
+    .card { background: rgba(167,139,250,.12); border:1px solid rgba(199,165,255,.25); border-radius:16px; padding:14px; }
+    .small { color:#d1c4ff; font-weight:800; font-size:.9rem; }
+    .big { font-size:clamp(1.2rem, 4vw, 1.6rem); font-weight:900; }
+    .footer-note { color:#d1c4ff; font-weight:700; }
+
+    /* Mobile card list for rows */
+    .rows-cards { display: none; margin-top: 12px; }
+    .row-card { background: rgba(167,139,250,.12); border:1px solid rgba(199,165,255,.25); border-radius:14px; padding:12px; margin-bottom:10px; }
+    .row-title { font-weight:900; margin-bottom:6px; }
+    .pill { display:inline-block; background:rgba(167,139,250,.25); border:1px solid rgba(199,165,255,.35); color:#f5ecff; font-weight:800; padding:2px 8px; border-radius:999px; margin-right:6px; margin-top:4px; }
+
+    @media (max-width: 700px){
+      .table { display: none; }           /* hide wide table */
+      .rows-cards { display: block; }     /* show mobile cards */
+      header { padding: 10px 12px; }
+      .buttons { top:58px; gap:6px; }
+      .btn { padding:9px 12px; font-size:.95rem; }
+      th, td { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Falco Enterprises</h1>
+      <div class="subtitle">Torsolo Production Budget • Total: <span id="grandTotal">$0</span></div>
+    </div>
+    <div class="right">
+      <div class="label">Current Category</div>
+      <div class="value" id="activeCat">—</div>
+      <div class="value">Subtotal: <span id="subtotal">$0</span></div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div id="buttons" class="buttons"></div>
+
+    <!-- Wide table -->
+    <div class="table" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Asset Name</th>
+            <th>Subtask</th>
+            <th>Responsible Roles</th>
+            <th>Animations</th>
+            <th>Cost per Animation</th>
+            <th>Rigging Cost</th>
+            <th>Cost</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="rows-cards" id="cards"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="small">Grand Total</div>
+        <div class="big" id="grandTotal2">$0</div>
+      </div>
+      <div class="card">
+        <div class="small">Note</div>
+        <div class="footer-note">Costs use <b>Animations × Cost/Animation + Rigging Cost</b>. Buttons update the category subtotal.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const CATEGORIES = ['Characters & Units','Enemies & Bosses','Environments','UI / FX / Audio'];
+  const DATA = [
+    {category:'Characters & Units',assetName:'Base Torso',subtask:'Idle, crawl, feed, death',roles:'Animator, Rigger',animations:4,costPerAnimation:400,riggingCost:300,duration:'7 days'},
+    {category:'Characters & Units',assetName:'Human Limbs (5 types)',subtask:'Idle, attack, damage, walk/trip',roles:'Animator, Rigger',animations:10,costPerAnimation:350,riggingCost:500,duration:'10 days'},
+    {category:'Characters & Units',assetName:'Monster Limbs (12 types)',subtask:'Idle, attack, damage',roles:'Animator, Rigger',animations:12,costPerAnimation:450,riggingCost:700,duration:'12 days'},
+    {category:'Characters & Units',assetName:'Robot Limbs (12 types)',subtask:'Idle, attack, damage, mechanical FX',roles:'Animator, Tech Artist',animations:12,costPerAnimation:500,riggingCost:900,duration:'12 days'},
+    {category:'Characters & Units',assetName:'Organs (Heart, Lungs)',subtask:'Breathing, pulse, collapse',roles:'Animator, FX Artist',animations:4,costPerAnimation:300,riggingCost:200,duration:'5 days'},
+    {category:'Enemies & Bosses',assetName:'Early Monsters (Rats, Blobs, Worms – 3)',subtask:'Idle, swarm, attack, death',roles:'Animator',animations:6,costPerAnimation:300,riggingCost:200,duration:'6 days'},
+    {category:'Enemies & Bosses',assetName:'Humanoids (Procedural)',subtask:'Modular idle/attack/death',roles:'Animator, Tech Artist',animations:4,costPerAnimation:300,riggingCost:200,duration:'5 days'},
+    {category:'Enemies & Bosses',assetName:'Bosses (Maw, Harvester, Surgeon, Brood, Prophet)',subtask:'Unique attacks, death',roles:'Animator, VFX Artist, Rigger',animations:8,costPerAnimation:450,riggingCost:600,duration:'12 days'},
+    {category:'Environments',assetName:'Dungeon Rooms (Flesh, Bone, Surgical, Robotic, Rot, Abyss, Safe)',subtask:'Tile loops (pulse, drip, sparks)',roles:'Environment Artist, Animator',animations:6,costPerAnimation:250,riggingCost:900,duration:'10 days'},
+    {category:'UI / FX / Audio',assetName:'UI / UX (HUD, Action Menu, Inventory, Tech Trees)',subtask:'HUD icons & transitions',roles:'UI Artist, Animator',animations:6,costPerAnimation:250,riggingCost:300,duration:'6 days'},
+    {category:'UI / FX / Audio',assetName:'Particles & FX (Blood, Sparks, Madness, Poison)',subtask:'FX loops',roles:'VFX Artist',animations:6,costPerAnimation:200,riggingCost:200,duration:'5 days'},
+    {category:'UI / FX / Audio',assetName:'Audio (Sync & Triggers)',subtask:'SFX timing aligned to anims',roles:'Sound Designer',animations:0,costPerAnimation:0,riggingCost:1500,duration:'7 days'},
+  ];
+  const fmt = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+  const calcCost = r => r.animations * r.costPerAnimation + r.riggingCost;
+  const subtotal = rows => rows.reduce((a,r)=>a+calcCost(r),0);
+  const grand = () => DATA.reduce((a,r)=>a+calcCost(r),0);
+
+  let active = CATEGORIES[0];
+
+  function render(){
+    const rows = DATA.filter(d=>d.category===active);
+    document.getElementById('activeCat').textContent = active;
+    document.getElementById('subtotal').textContent = fmt(subtotal(rows));
+    const g = fmt(grand());
+    document.getElementById('grandTotal').textContent = g;
+    document.getElementById('grandTotal2').textContent = g;
+
+    // Buttons
+    const btns = document.getElementById('buttons');
+    btns.innerHTML = '';
+    CATEGORIES.forEach(cat=>{
+      const b = document.createElement('button');
+      b.className = 'btn' + (cat===active?' active':'');
+      b.textContent = cat;
+      b.onclick = ()=>{ active = cat; render(); window.scrollTo({ top: document.querySelector('.wrap').offsetTop - 20, behavior: 'smooth' }); };
+      btns.appendChild(b);
+    });
+
+    // Table rows (desktop)
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.assetName}</td>
+        <td class="sub">${r.subtask}</td>
+        <td>${r.roles}</td>
+        <td>${r.animations}</td>
+        <td class="sub">${fmt(r.costPerAnimation)}</td>
+        <td class="sub">${fmt(r.riggingCost)}</td>
+        <td>${fmt(calcCost(r))}</td>
+        <td class="sub">${r.duration}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Mobile cards
+    const cards = document.getElementById('cards');
+    cards.innerHTML = '';
+    rows.forEach(r=>{
+      const c = document.createElement('div');
+      c.className = 'row-card';
+      c.innerHTML = `
+        <div class="row-title">${r.assetName}</div>
+        <div class="pill">${r.roles}</div>
+        <div class="pill">Animations: <b>${r.animations}</b></div>
+        <div style="margin-top:8px; color:#d9ccff; font-weight:700;">${r.subtask}</div>
+        <div style="margin-top:10px;">
+          <div class="pill">Cost/Anim: ${fmt(r.costPerAnimation)}</div>
+          <div class="pill">Rig: ${fmt(r.riggingCost)}</div>
+          <div class="pill">Total: <b>${fmt(calcCost(r))}</b></div>
+          <div class="pill">Duration: ${r.duration}</div>
+        </div>`;
+      cards.appendChild(c);
+    });
+  }
+
+  render();
+  </script>
+</body>
 </html>
